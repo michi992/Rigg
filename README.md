@@ -2,11 +2,9 @@
 
 Ein lokaler 3D-Rigging-Editor für aktuelle Windows-Browser. Das Programm verarbeitet Modelle im Browser; Modelle werden nicht an einen Server hochgeladen.
 
-Online-App: https://dewald-rig-studio.michaeld2907.chatgpt.site
-
 ## Start
 
-Die eigenständige Datei dist/dewald-rig-studio.html herunterladen und per Doppelklick öffnen. Keine Installation und keine Internetverbindung erforderlich. Die veröffentlichte App bietet dieselbe Datei über „Offline-Version herunterladen“ an.
+Die Datei dist/dewald-rig-studio.html herunterladen und per Doppelklick im Browser öffnen. Keine Installation und keine Internetverbindung erforderlich. Alternativ das Repository über „Code → Download ZIP“ herunterladen, entpacken und die HTML-Datei im Ordner dist öffnen.
 
 ## Bedienung
 
