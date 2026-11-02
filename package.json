@@ -1,0 +1,9 @@
+{
+  "name": "dewald-rig-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs", "check": "node --check src/app.js && node --check src/rig-core.js" },
+  "dependencies": { "three": "0.180.0" },
+  "devDependencies": { "esbuild": "0.25.10" }
+}

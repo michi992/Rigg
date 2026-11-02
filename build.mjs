@@ -1,0 +1,12 @@
+import {build} from 'esbuild';
+import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+await mkdir('dist',{recursive:true});
+await build({entryPoints:['src/app.js'],bundle:true,minify:true,format:'iife',outfile:'dist/app.js',target:['es2022'],legalComments:'eof'});
+const [html,css,js]=await Promise.all([readFile('src/index.html','utf8'),readFile('src/styles.css','utf8'),readFile('dist/app.js','utf8')]);
+await writeFile('dist/index.html',html);
+await writeFile('dist/styles.css',css);
+const license=await readFile('node_modules/three/LICENSE','utf8');
+const offline=html.replace('<link rel="stylesheet" href="./styles.css">',()=>'<style>'+css+'</style>').replace('<script src="./app.js" defer></script>','').replace('</body>',()=>'<script>'+js.replaceAll('</script','<\\/script')+'</script>\n<!-- '+license.replaceAll('--','—')+' -->\n</body>');
+await writeFile('dist/dewald-rig-studio.html',offline);
+await writeFile('dist/THREE-LICENSE.txt',license);
+console.log('Rig Studio gebaut, einschließlich eigenständiger Offline-HTML-Datei.');

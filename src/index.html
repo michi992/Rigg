@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#121718">
+  <meta name="description" content="Dewald Rig Studio – dein 3D-Editor für Skelette, automatische Gewichtung und Animation. Modelle lokal bearbeiten und als GLB exportieren.">
+  <title>Dewald Rig Studio</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Dewald Rig Studio Start"><span class="brand-mark" data-icon="rig"></span><span>DEWALD<span class="brand-sub">RIG STUDIO</span></span><span class="version">1.0</span></a>
+    <span class="header-divider"></span>
+    <div class="project-heading"><input id="project-name" aria-label="Projektname" value="Mein Charakter" maxlength="60"><span id="save-state"><i></i> Lokal gespeichert</span></div>
+    <div class="header-actions">
+      <button class="icon-button" id="undo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig" data-icon="undo"></button>
+      <button class="icon-button" id="redo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen" data-icon="redo"></button>
+      <span class="header-divider"></span>
+      <button class="button quiet" id="help-button" title="Anleitung" aria-label="Anleitung" data-icon="help"></button>
+      <button class="button" id="open-project"><span data-icon="folder"></span><span>Öffnen</span></button>
+      <button class="button" id="save-project"><span data-icon="save"></span><span>Speichern</span></button>
+      <button class="button primary" id="export"><span data-icon="export"></span><span>GLB exportieren</span></button>
+    </div>
+  </header>
+  <main class="workspace">
+    <aside class="left-panel">
+      <div class="panel-label">PROJEKT <button class="icon-button small" id="new-project" title="Neues Projekt" aria-label="Neues Projekt" data-icon="plus"></button></div>
+      <div class="model-card">
+        <div class="model-icon" data-icon="cube"></div>
+        <div><strong id="model-name">Studio-Bot</strong><span id="model-subtitle">Beispielmodell · bereit zum Riggen</span></div>
+        <span class="online-dot" title="Modell geladen"></span>
+      </div>
+      <button class="import-button" id="import-model"><span data-icon="upload"></span>Modell importieren</button>
+      <p class="format-hint">GLB oder OBJ · maximal 35 MB</p>
+      <div class="section-line"></div>
+      <div class="panel-label">SZENENHIERARCHIE <span id="bone-count" class="counter">17</span></div>
+      <div class="tree-heading"><span data-icon="rig"></span><strong>Skelett</strong><button class="icon-button small" id="add-bone" title="Knochen als Kind hinzufügen" aria-label="Knochen hinzufügen" data-icon="plus"></button></div>
+      <div class="bone-tree" id="bone-tree" aria-label="Knochenhierarchie"></div>
+      <div class="left-bottom">
+        <div class="local-note"><span data-icon="shield"></span><span>Deine Modelle bleiben<br><strong>auf diesem Gerät.</strong></span></div>
+        <button class="text-button" id="download-offline"><span data-icon="download"></span>Offline-Version herunterladen</button>
+      </div>
+    </aside>
+    <section class="editor">
+      <div class="editor-bar">
+        <div class="mode-switch" role="group" aria-label="Bearbeitungsmodus">
+          <button class="mode active" data-mode="rig"><span data-icon="rig"></span>Skelett</button>
+          <button class="mode" data-mode="pose"><span data-icon="pose"></span>Pose</button>
+          <button class="mode" data-mode="weights"><span data-icon="weights"></span>Gewichte</button>
+        </div>
+        <div class="view-actions">
+          <button class="icon-button active" id="toggle-bones" title="Skelett einblenden" aria-label="Skelett einblenden" aria-pressed="true" data-icon="rig"></button>
+          <button class="icon-button" id="toggle-wire" title="Drahtgitter" aria-label="Drahtgitter" aria-pressed="false" data-icon="wire"></button>
+          <button class="icon-button active" id="toggle-grid" title="Bodenraster" aria-label="Bodenraster" aria-pressed="true" data-icon="grid"></button>
+        </div>
+      </div>
+      <div id="viewport" class="viewport">
+        <div class="viewport-heading"><span class="live-dot"></span><strong id="viewport-title">Skelett bearbeiten</strong><span class="tag" id="mode-tag">REST POSE</span></div>
+        <div class="camera-controls"><select id="camera-view" aria-label="Kameraansicht"><option value="perspective">Perspektive</option><option value="front">Vorne</option><option value="side">Seite</option><option value="top">Oben</option></select><button class="icon-button" id="focus" aria-label="Modell zentrieren" title="Modell zentrieren (F)" data-icon="focus"></button></div>
+        <div class="viewport-info"><span id="vertex-count">– Vertices</span><span id="mesh-count">– Meshes</span></div>
+        <div class="axis-legend"><span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span></div>
+        <div class="viewport-guide" id="viewport-guide"><span data-icon="mouse"></span><span><b>Ziehen</b> drehen <em>·</em> <b>Scrollen</b> zoomen <em>·</em> <b>Rechts ziehen</b> verschieben</span></div>
+        <div class="selection-pill"><span class="live-dot"></span><span id="selected-pill">Brust</span><span class="keycap">F</span></div>
+        <div class="drop-zone" id="drop-zone"><span data-icon="upload"></span><strong>Modell hier ablegen</strong><span>GLB, OBJ oder Rig-Studio-Projekt</span></div>
+        <div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><strong id="loading-text">Studio wird gestartet …</strong></div>
+        <div class="webgl-error" id="webgl-error" hidden><strong>3D-Ansicht nicht verfügbar</strong><p>Aktiviere die Hardwarebeschleunigung in deinem Browser und lade die Seite erneut. Aktuelle Versionen von Edge, Chrome und Firefox werden unterstützt.</p></div>
+      </div>
+      <section class="timeline">
+        <div class="timeline-bar">
+          <div class="timeline-title"><span data-icon="timeline"></span><strong>Animation</strong><span id="key-count" class="muted">0 Keyframes</span></div>
+          <div class="playback"><button class="icon-button small" id="to-start" aria-label="Zum Anfang" data-icon="start"></button><button class="play-button" id="play" title="Wiedergabe (Leertaste)" aria-label="Wiedergabe" data-icon="play"></button><span class="frame-number"><input id="frame-number" value="0" min="0" max="120" type="number" aria-label="Aktueller Frame"> / 120</span><span class="fps">24 FPS</span></div>
+          <button class="button small key-button" id="add-key"><span data-icon="diamond"></span>Keyframe setzen</button>
+        </div>
+        <div class="timeline-track" id="timeline-track">
+          <div class="track-caption"><span data-icon="rig"></span>Gesamtes Rig</div>
+          <div class="track-area" id="track-area" aria-label="Zeitleiste">
+            <div class="time-ruler" id="time-ruler"></div><div class="track-line"></div><div id="key-markers"></div><div class="playhead" id="playhead"><span></span></div>
+            <input id="frame-slider" type="range" min="0" max="120" value="0" aria-label="Animation abspielen und Frame wählen">
+          </div>
+        </div>
+        <div class="timeline-bottom"><span id="timeline-hint">Pose einstellen → Keyframe setzen → nächsten Frame wählen.</span><button class="text-button" id="delete-key">Keyframe entfernen</button></div>
+      </section>
+    </section>
+    <aside class="right-panel">
+      <div class="panel-label">EIGENSCHAFTEN <span data-icon="sliders"></span></div>
+      <div class="inspector-heading"><div class="selected-icon" data-icon="joint"></div><div><span class="eyebrow">AUSGEWÄHLTER KNOCHEN</span><strong id="inspector-name">Brust</strong></div></div>
+      <div class="inspector-scroll">
+        <label class="field-label" for="bone-name">Name</label><input id="bone-name" class="text-input" maxlength="60" value="Brust">
+        <label class="field-label" for="bone-parent">Übergeordnet</label><select id="bone-parent" class="text-input"></select>
+        <div class="property-section"><div class="property-heading"><span data-icon="move"></span><strong id="transform-title">Position im Raum</strong><span id="transform-unit">m</span></div>
+          <div class="vector-fields" id="position-fields">
+            <label><span class="axis-x">X</span><input id="pos-x" type="number" step="0.01" min="-100" max="100" aria-label="Position X"></label>
+            <label><span class="axis-y">Y</span><input id="pos-y" type="number" step="0.01" min="-100" max="100" aria-label="Position Y"></label>
+            <label><span class="axis-z">Z</span><input id="pos-z" type="number" step="0.01" min="-100" max="100" aria-label="Position Z"></label>
+          </div>
+          <p class="property-hint" id="position-hint">Die Gelenkposition in der Ruhepose. Kinder behalten ihre Position im Raum.</p>
+        </div>
+        <div class="property-section" id="rotation-section"><div class="property-heading"><span data-icon="rotate"></span><strong>Lokale Rotation</strong><span>°</span></div>
+          <div class="rotation-row"><span class="axis-x">X</span><input id="rot-x-slider" type="range" min="-180" max="180" value="0" aria-label="Rotation X"><input id="rot-x" type="number" min="-180" max="180" step="1" value="0" aria-label="Rotation X in Grad"></div>
+          <div class="rotation-row"><span class="axis-y">Y</span><input id="rot-y-slider" type="range" min="-180" max="180" value="0" aria-label="Rotation Y"><input id="rot-y" type="number" min="-180" max="180" step="1" value="0" aria-label="Rotation Y in Grad"></div>
+          <div class="rotation-row"><span class="axis-z">Z</span><input id="rot-z-slider" type="range" min="-180" max="180" value="0" aria-label="Rotation Z"><input id="rot-z" type="number" min="-180" max="180" step="1" value="0" aria-label="Rotation Z in Grad"></div>
+          <button id="reset-bone" class="text-button"><span data-icon="undo"></span>Rotation zurücksetzen</button>
+        </div>
+        <div class="section-line"></div>
+        <div class="property-heading"><span data-icon="weights"></span><strong>Automatische Gewichtung</strong><span class="tiny-badge">4 / VERTEX</span></div>
+        <p class="property-hint">Verbindet dein Mesh über die Entfernung mit den nächsten Knochen.</p>
+        <label class="falloff-label" for="falloff">Einflussabfall <output id="falloff-value">3,0</output></label><input type="range" id="falloff" min="1" max="6" step="0.5" value="3">
+        <div class="weight-legend" id="weight-legend"><div></div><span>Kein Einfluss</span><span>Voller Einfluss</span></div>
+        <button class="button full mint-outline" id="auto-weights"><span data-icon="sparkles"></span>Gewichte neu berechnen</button>
+        <div class="rig-status"><span class="check-circle" data-icon="check"></span><div><strong id="rig-status-title">Mesh mit Skelett verbunden</strong><span id="rig-status-subtitle">Automatisch · 4 Einflüsse pro Vertex</span></div></div>
+        <div class="section-line"></div>
+        <div class="property-heading"><span data-icon="pose"></span><strong>Schnellaktionen</strong></div>
+        <div class="quick-actions"><button class="button" id="rest-pose">Ruhepose</button><button class="button" id="wave-pose">Winken</button><button class="button" id="mirror">Pose spiegeln</button><button class="button danger-subtle" id="delete-bone"><span data-icon="trash"></span>Knochen löschen</button></div>
+        <div class="tip"><span data-icon="bulb"></span><p>Starte mit <b>Pose</b> und bewege einen Arm. Die Gewichtung lässt dein Modell mitgehen.</p></div>
+      </div>
+    </aside>
+  </main>
+  <footer class="statusbar"><div><span class="live-dot"></span><span id="status-text">Bereit</span></div><span id="status-right">WebGL 2 · Lokal auf deinem Gerät</span><span class="footer-brand">DEWALD RIG STUDIO</span></footer>
+  <div class="toast-container" id="toasts" aria-live="polite"></div>
+  <input id="file-input" type="file" accept=".glb,.obj,.json" hidden>
+  <dialog id="help-dialog"><div class="dialog-header"><span class="eyebrow">DEIN EIGENER RIGGING-EDITOR</span><button id="close-help" class="icon-button" data-icon="close" aria-label="Anleitung schließen"></button></div><h1>Vom Modell zur Bewegung.</h1><p class="dialog-intro">Skelett setzen. Mesh verbinden. Charakter zum Leben erwecken.</p><div class="help-steps"><div><b>01</b><section><h2>Modell vorbereiten</h2><p>Importiere eine GLB- oder OBJ-Datei oder nutze den Studio-Bot. Modelle werden auf 3 m Höhe skaliert und zentriert. Für Humanoide empfiehlt sich eine T-Pose, Blickrichtung +Z.</p></section></div><div><b>02</b><section><h2>Skelett anpassen</h2><p>Wähle Knochen links oder direkt in der Ansicht. Ziehe das Achsenwerkzeug oder bearbeite X, Y, Z rechts. Mit + fügst du einen Kindknochen hinzu. Nach Änderungen wird die Gewichtung neu berechnet.</p></section></div><div><b>03</b><section><h2>Posen & Animation</h2><p>Wechsle zu Pose, stelle Rotationen ein und setze einen Keyframe. Wähle einen anderen Frame und wiederhole das. Leertaste startet die Vorschau. Animationen laufen mit 24 FPS.</p></section></div><div><b>04</b><section><h2>Weiterverwenden</h2><p>Speichern lädt ein bearbeitbares .rig.json-Projekt herunter. GLB exportiert Mesh, Skelett, Gewichte und gesetzte Animations-Keyframes. Der Download lässt sich zum Beispiel in Blender öffnen.</p></section></div></div><div class="help-note"><span data-icon="info"></span><p>Die Gewichtung verwendet Knochenabstände, kein Heat-Weighting. Bei komplexen Charakteren ist Nachbearbeitung in einem 3D-Programm sinnvoll. Bestehende GLB-Rigs und Animationen werden beim Modellimport durch dein neues Rig ersetzt. Komprimierte Draco-/KTX2-Dateien, FBX und externe OBJ-Materialdateien werden nicht unterstützt. Projekte werden automatisch in diesem Browser gespeichert; erst „Speichern“ erstellt deine eigene Sicherungsdatei.</p></div><div class="dialog-footer"><span>Strg+S speichern · Strg+Z zurück · F zentrieren</span><button class="button primary" id="start-working">Loslegen<span data-icon="arrow"></span></button></div></dialog>
+  <dialog id="confirm-dialog"><h2 id="confirm-title">Neues Projekt?</h2><p id="confirm-body"></p><div class="dialog-footer"><button class="button" id="confirm-cancel">Abbrechen</button><button class="button primary" id="confirm-ok">Fortfahren</button></div></dialog>
+</body>
+</html>
