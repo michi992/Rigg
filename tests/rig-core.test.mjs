@@ -15,7 +15,8 @@ import {
   normalizeParts,
 } from '../src/rig-core.js';
 
-// GLTFExporter's browser FileReader API, backed by Node's standard Blob.
+// Der GLB-Exporter erwartet FileReader. Im Node-Test wird dieselbe Schnittstelle
+// mit Blob.arrayBuffer nachgebildet, ohne einen Browser zu starten.
 globalThis.FileReader = class {
   readAsArrayBuffer(blob) {
     blob.arrayBuffer().then(
@@ -37,7 +38,7 @@ globalThis.FileReader = class {
   }
 };
 
-test('Auto-weights are finite, normalized, and remain bound in the rest pose', () => {
+test('Gewichte und Ruhepose', () => {
   const joints = humanoidJoints(),
     parts = demoParts(),
     rig = buildRig(parts, joints);
@@ -69,7 +70,7 @@ test('Auto-weights are finite, normalized, and remain bound in the rest pose', (
   assert.ok(maxError < 1e-5);
 });
 
-test('Rotating an arm changes the skinned vertices and restoring the pose reverses it', () => {
+test('Arm drehen und zurücksetzen', () => {
   const joints = humanoidJoints(),
     rig = buildRig(demoParts(), joints),
     mesh = rig.meshes[10];
@@ -88,7 +89,7 @@ test('Rotating an arm changes the skinned vertices and restoring the pose revers
   );
 });
 
-test('A two-key animation interpolates and survives a GLB export/import round trip', async () => {
+test('Animation und GLB-Rundlauf', async () => {
   const joints = humanoidJoints(),
     rig = buildRig(demoParts(), joints),
     first = defaultPose(joints),
@@ -124,7 +125,7 @@ test('A two-key animation interpolates and survives a GLB export/import round tr
   );
 });
 
-test('Joint cycles are rejected and imported geometry is normalized without world transforms', () => {
+test('Knochenzyklen und Modellnormalisierung', () => {
   const joints = humanoidJoints();
   joints[0].parent = 'head';
   assert.throws(() => validateJoints(joints), /Kreis/);

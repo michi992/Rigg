@@ -114,6 +114,7 @@ function snapshot() {
 function remember() {
   undoStack.push(snapshot());
   if (undoStack.length > 30) undoStack.shift();
+  // Nach einer neuen Bearbeitung ist der bisherige Redo-Zweig nicht mehr gültig.
   redoStack = [];
   refreshUndo();
 }
@@ -134,6 +135,7 @@ function storageLabel(text, success = true) {
   el.append(dot, document.createTextNode(text));
 }
 async function openDatabase() {
+  // Die Browsersicherung hält nur das zuletzt geöffnete Projekt dieses Ursprungs.
   try {
     db = await new Promise((resolve, reject) => {
       const request = indexedDB.open('dewald-rig-studio', 1);
@@ -153,6 +155,8 @@ async function openDatabase() {
   }
 }
 function scheduleSave() {
+  // Slider und Zeitleiste erzeugen viele Änderungen. Erst nach einer kurzen
+  // Pause schreiben, damit nicht jede Mausbewegung eine Transaktion startet.
   clearTimeout(saveTimer);
   storageLabel('Änderungen werden gesichert …');
   saveTimer = setTimeout(() => {
@@ -266,6 +270,8 @@ function setupScene() {
   gizmo.setSize(0.65);
   gizmoHelper = gizmo.getHelper();
   scene.add(gizmoHelper);
+  // Ein kompletter Ziehvorgang zählt als ein Undo-Schritt. Die endgültigen
+  // Gewichte und die Browsersicherung werden erst beim Loslassen aktualisiert.
   gizmo.addEventListener('dragging-changed', (e) => {
     dragging = e.value;
     orbit.enabled = !e.value;
@@ -375,6 +381,8 @@ function focusModel() {
   status('Ansicht zentriert');
 }
 function clearRig() {
+  // Das Rig besitzt seine Geometrien; Materialien und Texturen gehören zum
+  // geladenen Modell und werden erst beim Modellwechsel freigegeben.
   gizmo?.detach();
   if (rig) {
     scene.remove(rig.group);
@@ -668,6 +676,8 @@ function setMode(mode, save = true) {
   };
   $('viewport-title').textContent = titles[mode][0];
   $('mode-tag').textContent = titles[mode][1];
+  // Zum Positionieren der Gelenke wird die Ruhepose angezeigt. Die zuletzt
+  // bearbeitete Pose bleibt dabei im Projektzustand erhalten.
   if (rig) applyPose(rig, mode === 'rig' ? defaultPose(state.joints) : state.pose);
   updateDisplayMaterials();
   attachGizmo();
@@ -701,6 +711,8 @@ function refreshTimeline(updateHint = true) {
 function setFrame(frame) {
   stopPlaying();
   state.frame = Math.max(0, Math.min(LAST_FRAME, Math.round(frame) || 0));
+  // Das Verschieben des Abspielkopfs liest die vorhandene Animation aus.
+  // Eine bearbeitete Pose wird erst mit „Keyframe setzen“ Teil der Animation.
   if (state.keys.length) state.pose = samplePose(state.keys, state.frame, state.joints, state.pose);
   if (state.mode === 'rig') setMode('pose', false);
   applyPose(rig, state.pose);
@@ -733,6 +745,8 @@ function togglePlay() {
   gizmo.detach();
 }
 function invalidateAnimation() {
+  // Keyframes beziehen sich auf die aktuelle Knochenstruktur und Ruhepose.
+  // Nach deren Änderung muss die Animation neu angelegt werden.
   if (state.keys.length)
     toast('Das Skelett wurde geändert. Die bisherigen Animations-Keyframes wurden zurückgesetzt.');
   state.keys = [];
@@ -783,6 +797,8 @@ async function openFile(file) {
   await nextPaint();
   try {
     let next, prepared;
+    // Erst vollständig laden und prüfen, dann das bisherige Modell ersetzen.
+    // Eine fehlerhafte Importdatei soll das offene Projekt nicht verwerfen.
     if (extension === 'json') {
       next = validateProject(JSON.parse(await file.text()));
       prepared = await sourceParts(next.source);
@@ -894,6 +910,8 @@ async function exportGLB() {
   }
 }
 async function historyStep(from, to) {
+  // Im Verlauf liegen Projektdaten, keine Three.js-Objekte. Beim Zurückgehen
+  // werden Skelett und Gewichte aus diesem Datenstand wieder aufgebaut.
   if (!from.length || busyImport) return;
   stopPlaying();
   const next = from.pop();

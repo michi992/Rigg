@@ -8,7 +8,7 @@ import {
   sourceParts,
 } from '../src/project-files.js';
 
-test('New projects keep their editable data separate', () => {
+test('Unabhängige Projektzustände', () => {
   const first = createProject();
   const second = createProject();
   first.joints[0].position[0] = 5;
@@ -18,7 +18,7 @@ test('New projects keep their editable data separate', () => {
   assert.equal(validateProject(second), second);
 });
 
-test('Project import rejects duplicate frames instead of silently replacing a pose', () => {
+test('Doppelte Keyframes abweisen', () => {
   const project = createProject();
   project.keys = [
     { frame: 24, pose: structuredClone(project.pose) },
@@ -27,7 +27,7 @@ test('Project import rejects duplicate frames instead of silently replacing a po
   assert.throws(() => validateProject(project), /doppelter Keyframe/);
 });
 
-test('Incomplete poses and non-finite rotations cannot enter an imported project', () => {
+test('Ungültige und unvollständige Posen abweisen', () => {
   const incomplete = createProject();
   delete incomplete.pose.head;
   assert.throws(() => validateProject(incomplete), /ungültige Rotationen/);
@@ -37,7 +37,7 @@ test('Incomplete poses and non-finite rotations cannot enter an imported project
   assert.throws(() => validateProject(invalid), /ungültige Rotationen/);
 });
 
-test('A missing UI selection is repaired without changing the skeleton', () => {
+test('Ungültige Auswahl zurücksetzen', () => {
   const project = createProject();
   const before = structuredClone(project.joints);
   project.selected = 'removed_bone';
@@ -48,13 +48,15 @@ test('A missing UI selection is repaired without changing the skeleton', () => {
   assert.deepEqual(loaded.joints, before);
 });
 
-test('Binary models survive base64 storage across chunk boundaries', () => {
-  const bytes = Uint8Array.from({ length: 100003 }, (_, index) => index % 256);
+test('Base64-Rundlauf mit mehreren Blöcken', () => {
+  // Drei volle Blöcke und ein kurzer Rest prüfen auch den letzten Teilblock.
+  const payloadLength = 3 * 32_768 + 7;
+  const bytes = Uint8Array.from({ length: payloadLength }, (_, index) => index % 256);
   const restored = new Uint8Array(base64ToBuffer(bufferToBase64(bytes.buffer)));
   assert.deepEqual(restored, bytes);
 });
 
-test('The extracted OBJ loader still returns normalized mesh geometry', async () => {
+test('OBJ-Geometrie normalisieren', async () => {
   const data = 'v 0 0 0\nv 1 0 0\nv 0 2 0\nf 1 2 3\n';
   const parts = await sourceParts({ kind: 'obj', name: 'triangle.obj', data });
   assert.equal(parts.length, 1);

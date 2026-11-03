@@ -82,6 +82,8 @@ export function validateProject(project) {
 export function bufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
   let s = '';
+  // Bei großen Modellen würde ein Spread aller Bytes das Argumentlimit
+  // des Browsers überschreiten. Deshalb in kleinen Blöcken umwandeln.
   for (let i = 0; i < bytes.length; i += 32768)
     s += String.fromCharCode(...bytes.subarray(i, i + 32768));
   return btoa(s);
