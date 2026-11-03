@@ -6,6 +6,8 @@
 
 ## Starten
 
+[Live-Demo öffnen](https://michi992.github.io/Rigg/)
+
 Repository über **Code → Download ZIP** herunterladen und entpacken. Anschließend die Datei **dist/dewald-rig-studio.html** öffnen. Für diese Version sind weder Node.js noch eine Internetverbindung nötig.
 
 Zum Ausprobieren ist ein Beispielmodell vorhanden. Eigene Modelle lassen sich als unkomprimierte GLB- oder OBJ-Datei laden. Für das Humanoid-Skelett eignet sich eine T-Pose mit Blickrichtung +Z.
