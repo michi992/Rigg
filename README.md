@@ -1,44 +1,39 @@
 # Dewald Rig Studio
 
-Ein lokaler 3D-Rigging-Editor für aktuelle Windows-Browser. Das Programm verarbeitet Modelle im Browser; Modelle werden nicht an einen Server hochgeladen.
+3D-Rigging im Browser: ein Modell laden, Knochen anpassen und eine kurze Animation erstellen. Die Modelldaten bleiben auf dem eigenen Gerät.
 
-## Start
+## Starten
 
-Die Datei dist/dewald-rig-studio.html herunterladen und per Doppelklick im Browser öffnen. Keine Installation und keine Internetverbindung erforderlich. Alternativ das Repository über „Code → Download ZIP“ herunterladen, entpacken und die HTML-Datei im Ordner dist öffnen.
+Repository über **Code → Download ZIP** herunterladen und entpacken. Anschließend die Datei **dist/dewald-rig-studio.html** öffnen. Für diese Version sind weder Node.js noch eine Internetverbindung nötig.
 
-## Bedienung
+Zum Ausprobieren ist ein Beispielmodell vorhanden. Eigene Modelle lassen sich als unkomprimierte GLB- oder OBJ-Datei laden. Für das Humanoid-Skelett eignet sich eine T-Pose mit Blickrichtung +Z.
 
-1. Das Beispielmodell verwenden oder GLB/OBJ importieren.
-2. Unter „Skelett“ Knochen auswählen, Positionen anpassen und Kindknochen ergänzen. Auf WebGL-Geräten stehen zusätzlich 3D-Achsenwerkzeuge bereit.
-3. Unter „Pose“ lokale Rotationen verändern. „Gewichte“ zeigt den Einfluss des ausgewählten Knochens.
-4. Auf der Zeitleiste Frames 0–120 wählen, Posen einstellen und Keyframes setzen. Die Animation verwendet 24 FPS.
-5. Mit „Speichern“ eine .rig.json-Sicherungsdatei herunterladen. „GLB exportieren“ exportiert Mesh, Skelett, Gewichte und gesetzte Animations-Keyframes. Ohne Keyframes enthält GLB die Ruhepose.
+## Arbeiten mit dem Editor
 
-Strg+S: Projektdatei speichern. Strg+Z/Y: rückgängig/wiederholen. F: Ansicht zentrieren. Leertaste: Wiedergabe. Die Anleitung ist über das Fragezeichen erreichbar.
+1. Unter **Skelett** Gelenke auswählen und ihre Position an das Modell anpassen. Mit **+** wird ein Kindknochen angelegt.
+2. Unter **Pose** die lokalen Rotationen ändern. **Gewichte** zeigt den Einfluss des ausgewählten Knochens.
+3. Einen Frame wählen und **Keyframe setzen** drücken. Für eine Bewegung mindestens zwei verschiedene Frames belegen; die Vorschau läuft mit 24 FPS.
+4. **Speichern** erstellt eine bearbeitbare .rig.json-Datei. **GLB exportieren** gibt Modell, Rig und gesetzte Animation aus. Ohne Keyframes wird die Ruhepose exportiert.
 
-## Grenzen
+Strg+S speichert das Projekt, Strg+Z/Y geht zurück/vor, F zentriert die Ansicht, die Leertaste startet oder stoppt die Vorschau. Die Browsersicherung ersetzt keine eigene Projektdatei.
 
-- Distanzbasierte automatische Gewichtung mit bis zu vier Knochen pro Vertex. Kein manuelles Weight Painting, Heat-Weighting, IK oder Facial Rigging.
-- Modellimport: maximal 35 MB und 300.000 Vertices; bearbeitbare Projekte: bis zu 100 Knochen.
-- Importiert werden eigenständige, unkomprimierte GLB-Dateien oder OBJ-Geometrie. Externe Ressourcen, Draco, Meshopt, KTX2, FBX und OBJ-MTL-Dateien werden nicht geladen.
-- Importmodelle werden auf 3 m Höhe normalisiert. Das Humanoid-Skelett wird im Editor an das eigene Modell angepasst; automatische anatomische Erkennung ist nicht enthalten.
-- Bestehende GLB-Rigs und Animationen werden beim Modellimport durch das neue Rig ersetzt. Morph-Ziele werden nicht übernommen.
-- Ohne WebGL 2 verwendet die App eine Canvas-Softwareansicht mit vereinfachten Materialien und ohne Texturabbildung oder 3D-Transformationsgriffe. Positionen und Rotationen bleiben über die Wertefelder bearbeitbar.
-- Die automatische Sicherung gilt für den aktuellen Browser. Für eine eigene Sicherungsdatei „Speichern“ verwenden.
+## Einschränkungen
+
+Die Gewichtung beruht auf Knochenabständen und kann an schwierigen Gelenken Nacharbeit benötigen. Weight Painting und IK sind noch nicht enthalten. Der Import normalisiert Modelle auf 3 m Höhe und ersetzt vorhandene Rigs und Animationen; Morph-Ziele werden nicht übernommen.
+
+Modelle sind auf 35 MB und 300.000 Vertices begrenzt, Projekte auf 100 Knochen. Externe OBJ-Materialdateien sowie Draco-, Meshopt- und KTX2-Kompression werden nicht geladen. Ohne WebGL 2 gibt es eine vereinfachte Softwareansicht; Knochen werden dort über die Wertefelder bearbeitet.
 
 ## Entwicklung
 
-Node.js installieren, dann:
+Node.js ab Version 18:
 
     npm ci
     npm run check
-    node --test tests/rig-core.test.mjs
+    npm test
     npm run build
 
-Der Build erstellt die Webversion und eine einzelne HTML-Datei mit eingebettetem JavaScript und CSS.
+Der Build legt die Webversion und die einzelne Offline-HTML-Datei unter dist ab. Mit npm run format wird der Quellcode formatiert.
 
-## Tests
+Die UI liegt in src/app.js, Skinning und Animation in src/rig-core.js. Projektdateien werden in src/project-files.js verarbeitet, die Icons in src/icons.js. src/software-renderer.js enthält die Canvas-Ansicht. Die Tests prüfen Gewichtung, Verformung, Projektimport und den GLB-Export mit anschließendem Rückimport.
 
-Geprüft: normalisierte Skin-Gewichte und Ruhepose, Vertex-Verformung und Rücksetzen, Quaternion-Interpolation, GLB-Export/Import einschließlich Animation und Knochenhierarchie sowie sichere Ablehnung zyklischer Skelette.
-
-Three.js 0.180.0 ist unter der MIT-Lizenz eingebunden. Der Lizenztext liegt in dist/THREE-LICENSE.txt und ist auch in der Offline-HTML-Datei enthalten.
+Three.js wird unter der MIT-Lizenz verwendet. Der Lizenztext liegt in dist/THREE-LICENSE.txt und ist auch in der Offline-Datei enthalten.
