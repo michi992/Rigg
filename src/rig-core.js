@@ -81,6 +81,28 @@ export function demoParts() {
     limb([sign * 0.22, 0.69, 0], [sign * 0.22, 0.15, 0], 0.115);
     sphere([sign * 0.22, 0.11, 0.09], [0.135, 0.11, 0.24], dark);
   }
+  for (const [i, name] of [
+    [5, 'blinkRight'],
+    [6, 'blinkLeft'],
+  ]) {
+    const part = parts[i],
+      p = part.geometry.attributes.position;
+    const values = new Float32Array(p.count * 3);
+    for (let j = 0; j < p.count; j++) values[j * 3 + 1] = (2.72 - p.getY(j)) * 0.96;
+    part.geometry.morphAttributes.position = [new THREE.Float32BufferAttribute(values, 3)];
+    part.geometry.morphTargetsRelative = true;
+    part.updateMorphTargets();
+    part.morphTargetDictionary = { [name]: 0 };
+  }
+  sphere([0, 2.58, 0.208], [0.05, 0.007, 0.015], dark, 'Mund');
+  const mouth = parts.at(-1),
+    positions = mouth.geometry.attributes.position;
+  const opening = new Float32Array(positions.count * 3);
+  for (let i = 0; i < positions.count; i++) opening[i * 3 + 1] = (positions.getY(i) - 2.58) * 5;
+  mouth.geometry.morphAttributes.position = [new THREE.Float32BufferAttribute(opening, 3)];
+  mouth.geometry.morphTargetsRelative = true;
+  mouth.updateMorphTargets();
+  mouth.morphTargetDictionary = { aa: 0 };
   return parts;
 }
 
@@ -115,21 +137,45 @@ export function normalizeParts(object) {
       geometry.deleteAttribute('skinWeight');
       geometry.computeVertexNormals();
     }
-    geometry.morphAttributes = {};
     geometry.applyMatrix4(mesh.matrixWorld);
+    const morphs = mesh.geometry.morphAttributes.position || [];
+    if (morphs.length > LIMITS.morphTargets)
+      throw new Error(
+        'Das Mesh enthält zu viele Gesichtsformen. Maximal ' + LIMITS.morphTargets + '.',
+      );
+    geometry.morphAttributes = {};
+    if (morphs.length) {
+      const original = mesh.geometry.attributes.position;
+      const base = geometry.attributes.position;
+      const v = new THREE.Vector3(),
+        origin = new THREE.Vector3();
+      geometry.morphAttributes.position = morphs.map((source) => {
+        const target = new THREE.Float32BufferAttribute(new Float32Array(source.count * 3), 3);
+        target.name = source.name;
+        for (let i = 0; i < source.count; i++) {
+          v.fromBufferAttribute(source, i);
+          if (mesh.geometry.morphTargetsRelative) v.add(origin.fromBufferAttribute(original, i));
+          if (mesh.isSkinnedMesh) mesh.applyBoneTransform(i, v);
+          v.applyMatrix4(mesh.matrixWorld).sub(origin.fromBufferAttribute(base, i));
+          target.setXYZ(i, v.x, v.y, v.z);
+        }
+        return target;
+      });
+      geometry.morphTargetsRelative = true;
+    }
     if (!geometry.attributes.normal) geometry.computeVertexNormals();
     const material = Array.isArray(mesh.material)
       ? mesh.material.map((m) => m.clone())
       : mesh.material.clone();
     const part = new THREE.Mesh(geometry, material);
+    if (morphs.length) part.morphTargetDictionary = { ...mesh.morphTargetDictionary };
     part.name = mesh.name || 'Mesh';
     parts.push(part);
   });
   if (!parts.length) throw new Error('Die Datei enthält kein unterstütztes 3D-Mesh.');
   const box = new THREE.Box3();
   parts.forEach((p) => {
-    p.geometry.computeBoundingBox();
-    box.union(p.geometry.boundingBox);
+    box.union(new THREE.Box3().setFromBufferAttribute(p.geometry.attributes.position));
   });
   const size = box.getSize(new THREE.Vector3());
   const longest = Math.max(size.x, size.y, size.z);
@@ -140,7 +186,12 @@ export function normalizeParts(object) {
   const matrix = new THREE.Matrix4()
     .makeTranslation(-c.x, -box.min.y, -c.z)
     .premultiply(new THREE.Matrix4().makeScale(factor, factor, factor));
-  parts.forEach((p) => p.geometry.applyMatrix4(matrix));
+  const linear = new THREE.Matrix3().setFromMatrix4(matrix);
+  parts.normalization = matrix;
+  parts.forEach((p) => {
+    p.geometry.applyMatrix4(matrix);
+    for (const target of p.geometry.morphAttributes.position || []) target.applyMatrix3(linear);
+  });
   return parts;
 }
 
@@ -291,6 +342,7 @@ export function buildRig(parts, joints, falloff = 3) {
     geometry.setAttribute('skinWeight', attributes.weights);
 
     const mesh = new THREE.SkinnedMesh(geometry, part.material);
+    if (part.morphTargetDictionary) mesh.morphTargetDictionary = { ...part.morphTargetDictionary };
     mesh.name = 'Mesh_' + partIndex;
     mesh.castShadow = true;
     mesh.receiveShadow = true;

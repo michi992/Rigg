@@ -92,7 +92,7 @@ test('Größenlimits greifen vor dem Lesen des Dateiinhalts', async () => {
     () => validateImportFile({ name: 'large.json', size: LIMITS.projectBytes + 1 }),
     /höchstens/,
   );
-  assert.throws(() => validateImportFile({ name: 'unknown.exe', size: 1 }), /GLB, OBJ/);
+  assert.throws(() => validateImportFile({ name: 'unknown.exe', size: 1 }), /GLB, VRM 1.0, OBJ/);
 });
 test('Projektimport weist falsche IDs, Knochenzyklen und ungültige JSON-Dateien ab', async () => {
   const wrongId = createProject();

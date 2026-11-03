@@ -27,6 +27,7 @@ const values = {
   COORDINATE: LIMITS.coordinate,
   FALLOFF_MIN: LIMITS.falloffMin,
   FALLOFF_MAX: LIMITS.falloffMax,
+  PNG_SIZE: fileSizeLabel(LIMITS.imageBytes),
 };
 const html = template.replace(/\{\{([A-Z_]+)\}\}/g, (_, name) => {
   if (!(name in values)) throw new Error('Unbekannter HTML-Platzhalter: ' + name);

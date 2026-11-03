@@ -1,5 +1,6 @@
 export function bindShortcuts(actions, target = document) {
   const handler = (event) => {
+    if (target.body?.dataset.workspace === '2d') return;
     const key = event.key.toLowerCase();
     const editing =
       ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.activeElement?.tagName) ||

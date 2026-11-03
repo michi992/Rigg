@@ -12,6 +12,7 @@ function page() {
   const html = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
   const dom = new JSDOM(html);
   globalThis.document = dom.window.document;
+  globalThis.Option = dom.window.Option;
   return dom;
 }
 test('Baumansicht behandelt importierte Namen als Text und wählt Knochen aus', () => {
@@ -86,5 +87,55 @@ test('Tastenkürzel beachten Eingabefelder und lassen sich wieder entfernen', ()
   unbind();
   press('Escape');
   assert.deepEqual(calls, ['undo', 'redo', 'save']);
+  dom.window.close();
+});
+
+test('Arbeitsbereich-Tabs schalten einmal um und fangen Klicks im Editor nicht ab', async () => {
+  const { bindWorkspaceTabs } = await import('../src/ui/workspaces.js');
+  const dom = page(),
+    calls = [];
+  bindWorkspaceTabs((workspace) => calls.push(workspace));
+  document.querySelector('[data-workspace="2d"]:not(body)').click();
+  assert.equal(document.body.dataset.workspace, '2d');
+  assert.equal(
+    document.querySelector('.workspace-tabs [data-workspace="2d"]').getAttribute('aria-pressed'),
+    'true',
+  );
+  document.querySelector('#preview2d').click();
+  assert.deepEqual(calls, ['2d']);
+  document.querySelector('.workspace-tabs [data-workspace="3d"]').click();
+  assert.deepEqual(calls, ['2d', '3d']);
+  dom.window.close();
+});
+
+test('VTuber-Metadaten aktivieren den Export direkt beim Eingeben und bilden einen Verlaufsschritt', async () => {
+  const { createAvatarPanel } = await import('../src/vtuber/panel.js');
+  const { demoParts, buildRig } = await import('../src/rig-core.js');
+  const dom = page(),
+    state = createProject(),
+    parts = demoParts(),
+    rig = buildRig(parts, state.joints);
+  let remembered = 0,
+    changed = 0;
+  createAvatarPanel({
+    getState: () => state,
+    getParts: () => parts,
+    getRig: () => rig,
+    remember: () => remembered++,
+    mutation: () => changed++,
+    stopPlaying() {},
+    restoreDisplay() {},
+  });
+  document.querySelector('#open-avatar').click();
+  assert.equal(document.querySelector('#export-vrm').disabled, true);
+  const input = document.querySelector('#avatar-authors');
+  input.value = 'Modellautor';
+  input.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(document.querySelector('#export-vrm').disabled, false);
+  input.value = 'Modellautor 2';
+  input.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(remembered, 1);
+  assert.equal(changed, 2);
+  assert.deepEqual(state.avatar.meta.authors, ['Modellautor 2']);
   dom.window.close();
 });

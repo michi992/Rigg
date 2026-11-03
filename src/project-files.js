@@ -1,4 +1,5 @@
 import { LIMITS } from './config.js';
+import { createAvatar, HUMAN_BONES, EXPRESSIONS, validateAvatar } from './vtuber/vrm.js';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -79,6 +80,7 @@ export function validateProject(project) {
   if (!project.joints.some((j) => j.id === project.selected))
     project.selected = project.joints[0].id;
   if (!['rig', 'pose', 'weights'].includes(project.mode)) project.mode = 'rig';
+  if (project.avatar) validateAvatar(project.avatar, project.joints);
   return project;
 }
 export function bufferToBase64(buffer) {
@@ -112,7 +114,55 @@ export async function sourceParts(source) {
   if (source.kind === 'demo') return demoParts();
   if (source.kind === 'obj') return normalizeParts(new OBJLoader().parse(source.data));
   const gltf = await safeLoader().parseAsync(base64ToBuffer(source.data), '');
-  return normalizeParts(gltf.scene);
+  if (gltf.parser.json.extensions?.VRM)
+    throw new Error('Bitte VRM 0.x zuerst als VRM 1.0 konvertieren.');
+  const parts = normalizeParts(gltf.scene);
+  const vrm = gltf.parser.json.extensions?.VRMC_vrm;
+  if (vrm) {
+    if (vrm.specVersion !== '1.0') throw new Error('Nur VRM 1.0 wird unterstützt.');
+    const nodes = new Map();
+    for (const [role, , ,] of HUMAN_BONES) {
+      const bind = vrm.humanoid?.humanBones?.[role];
+      if (bind) nodes.set(role, await gltf.parser.getDependency('node', bind.node));
+    }
+    const canonical = new Map(HUMAN_BONES.map(([role, , id]) => [role, id]));
+    const jointNodes = new Map([...nodes].map(([role, node]) => [node, canonical.get(role)]));
+    const joints = [...nodes].map(([role, node]) => {
+      let parent = node.parent;
+      while (parent && !jointNodes.has(parent)) parent = parent.parent;
+      return {
+        id: canonical.get(role),
+        name: HUMAN_BONES.find(([name]) => name === role)[1],
+        parent: jointNodes.get(parent) || null,
+        position: node
+          .getWorldPosition(new THREE.Vector3())
+          .applyMatrix4(parts.normalization)
+          .toArray(),
+      };
+    });
+    validateJoints(joints);
+    const avatar = createAvatar(joints, parts);
+    avatar.meta = structuredClone(vrm.meta);
+    const original = [];
+    gltf.scene.traverse((node) => {
+      if (node.isMesh && node.geometry?.attributes.position) original.push(node);
+    });
+    for (const [name] of EXPRESSIONS) {
+      const binds = [];
+      for (const bind of vrm.expressions?.preset?.[name]?.morphTargetBinds || []) {
+        const node = await gltf.parser.getDependency('node', bind.node);
+        node.traverse((mesh) => {
+          const index = original.indexOf(mesh);
+          if (index >= 0) binds.push({ mesh: index, index: bind.index, weight: bind.weight });
+        });
+      }
+      avatar.expressions[name] = binds;
+    }
+    validateAvatar(avatar, joints, parts);
+    parts.importJoints = joints;
+    parts.importAvatar = avatar;
+  }
+  return parts;
 }
 export function disposeParts(oldParts) {
   const materials = new Set(),

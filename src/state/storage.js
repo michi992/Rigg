@@ -1,9 +1,10 @@
 export class ProjectStorage {
-  constructor(onStatus, onError) {
+  constructor(onStatus, onError, key = 'current') {
     this.onStatus = onStatus;
     this.onError = onError;
     this.db = null;
     this.timer = null;
+    this.key = key;
   }
   async load() {
     try {
@@ -14,7 +15,7 @@ export class ProjectStorage {
         request.onerror = () => reject(request.error);
       });
       return await new Promise((resolve, reject) => {
-        const request = this.db.transaction('projects').objectStore('projects').get('current');
+        const request = this.db.transaction('projects').objectStore('projects').get(this.key);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
@@ -33,7 +34,7 @@ export class ProjectStorage {
       }
       try {
         const transaction = this.db.transaction('projects', 'readwrite');
-        transaction.objectStore('projects').put(snapshot(), 'current');
+        transaction.objectStore('projects').put(snapshot(), this.key);
         transaction.oncomplete = () => this.onStatus('Lokal gespeichert');
         transaction.onerror = () => {
           this.onStatus('Bitte Projektdatei speichern', false);

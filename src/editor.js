@@ -39,11 +39,13 @@ import {
   reportError,
 } from './ui/feedback.js';
 import { readImportFile, validateImportFile } from './input/files.js';
+import { createAvatarPanel } from './vtuber/panel.js';
 
 let state = freshState(),
   parts = [],
   rig = null,
-  viewport;
+  viewport,
+  avatarPanel;
 let playing = false,
   lastTime = 0,
   frameClock = 0,
@@ -77,6 +79,7 @@ function rebuildRig() {
   const next = buildRig(parts, state.joints, state.falloff);
   viewport.setRig(next);
   rig = next;
+  avatarPanel?.refresh();
   updateMetrics();
 }
 function snapshot() {
@@ -494,8 +497,18 @@ export async function startEditor() {
       setFrame,
       refreshTimeline,
     });
+    avatarPanel = createAvatarPanel({
+      getState: () => state,
+      getParts: () => parts,
+      getRig: () => rig,
+      remember,
+      mutation,
+      stopPlaying,
+      restoreDisplay: updateDisplayMaterials,
+    });
+    document.addEventListener('workspacechange', stopPlaying);
     document.querySelector('.format-hint').textContent =
-      'GLB oder OBJ · maximal ' + fileSizeLabel(LIMITS.modelBytes);
+      'GLB, VRM 1.0 oder OBJ · maximal ' + fileSizeLabel(LIMITS.modelBytes);
     const saved = await openDatabase();
     if (saved) {
       try {

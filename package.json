@@ -1,6 +1,6 @@
 {
   "name": "dewald-rig-studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -15,6 +15,7 @@
     "three": "0.180.0"
   },
   "devDependencies": {
+    "@pixiv/three-vrm": "3.5.5",
     "esbuild": "0.25.10",
     "jsdom": "26.1.0",
     "prettier": "3.6.2"

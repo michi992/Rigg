@@ -43,7 +43,7 @@ export function bindEditorEvents({
     $('file-input').click();
   };
   $('import-model').onclick = () => {
-    $('file-input').accept = '.glb,.obj';
+    $('file-input').accept = '.glb,.vrm,.obj';
     $('file-input').click();
   };
   $('file-input').onchange = () => openFile($('file-input').files[0]);

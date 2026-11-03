@@ -15,6 +15,10 @@ export const LIMITS = Object.freeze({
   falloffMin: 1,
   falloffMax: 6,
   undoEntries: 30,
+  morphTargets: 64,
+  layers2D: 40,
+  imageBytes: 8 * MiB,
+  imageDimension: 4096,
 });
 
 export const FPS = 24;

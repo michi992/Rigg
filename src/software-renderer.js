@@ -46,7 +46,8 @@ export class SoftwareRenderer {
       options.mode +
       options.showBones +
       options.showGrid +
-      options.wireframe;
+      options.wireframe +
+      rig.meshes.map((mesh) => mesh.morphTargetInfluences?.join(',')).join(';');
     if (signature === this.lastSignature) return;
     this.lastSignature = signature;
     this.lastRender = now;
@@ -111,8 +112,7 @@ export class SoftwareRenderer {
         world = new Float32Array(position.count * 3),
         v = this.vector;
       for (let i = 0; i < position.count; i++) {
-        v.fromBufferAttribute(position, i);
-        mesh.applyBoneTransform(i, v);
+        mesh.getVertexPosition(i, v);
         v.applyMatrix4(mesh.matrixWorld);
         world.set(v.toArray(), i * 3);
         v.project(camera);

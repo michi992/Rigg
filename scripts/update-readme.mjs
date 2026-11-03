@@ -14,6 +14,9 @@ export function limitsSection() {
     '| Vertices | ' + LIMITS.vertices.toLocaleString('de-DE') + ' |',
     '| Knochen | ' + LIMITS.joints + ' |',
     '| Zeitleiste | Frame 0–' + LAST_FRAME + ' bei ' + FPS + ' FPS |',
+    '| 2D-Ebenen | ' + LIMITS.layers2D + ' |',
+    '| PNG pro Ebene | ' + fileSizeLabel(LIMITS.imageBytes) + ' |',
+    '| PNG-Abmessungen | ' + LIMITS.imageDimension + ' × ' + LIMITS.imageDimension + ' Pixel |',
     markerEnd,
   ].join('\n');
 }

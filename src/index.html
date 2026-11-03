@@ -6,20 +6,23 @@
     <meta name="theme-color" content="#121718" />
     <meta
       name="description"
-      content="Dewald Rig Studio – dein 3D-Editor für Skelette, automatische Gewichtung und Animation. Modelle lokal bearbeiten und als GLB exportieren."
+      content="Dewald Rig Studio – dein Editor für 3D-VTuber mit VRM-Export und 2D-Avatare mit Ebenen und Verformungsnetzen."
     />
     <title>Dewald Rig Studio</title>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./app.js" defer></script>
   </head>
-  <body>
+  <body data-workspace="3d">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Dewald Rig Studio Start"
         ><span class="brand-mark" data-icon="rig"></span
         ><span>DEWALD<span class="brand-sub">RIG STUDIO</span></span
-        ><span class="version">1.0</span></a
+        ><span class="version">1.1</span></a
       >
-      <span class="header-divider"></span>
+      <nav class="workspace-tabs" aria-label="Avatar-Typ">
+        <button data-workspace="3d" aria-pressed="true">3D · VRM</button
+        ><button data-workspace="2d" aria-pressed="false">2D · Ebenen</button>
+      </nav>
       <div class="project-heading">
         <input
           id="project-name"
@@ -57,6 +60,7 @@
         <button class="button" id="save-project">
           <span data-icon="save"></span><span>Speichern</span>
         </button>
+        <button class="button mint-outline" id="open-avatar">VTuber / VRM</button>
         <button class="button primary" id="export">
           <span data-icon="export"></span><span>GLB exportieren</span>
         </button>
@@ -85,7 +89,7 @@
         <button class="import-button" id="import-model">
           <span data-icon="upload"></span>Modell importieren
         </button>
-        <p class="format-hint">GLB oder OBJ · maximal {{MODEL_SIZE}}</p>
+        <p class="format-hint">GLB, VRM 1.0 oder OBJ · maximal {{MODEL_SIZE}}</p>
         <div class="section-line"></div>
         <div class="panel-label">
           SZENENHIERARCHIE <span id="bone-count" class="counter">17</span>
@@ -435,13 +439,82 @@
         </div>
       </aside>
     </main>
+    <aside id="avatar-panel" class="avatar-panel" hidden aria-label="VRM-Einstellungen">
+      <div class="avatar-panel-header">
+        <strong>3D-VTuber</strong><button id="close-avatar" class="button">Schließen</button>
+      </div>
+      <div id="avatar-settings"></div>
+    </aside>
+    <main id="workspace2d" class="workspace2d">
+      <div class="toolbar2d">
+        <div>
+          <input id="project2d-name" aria-label="2D-Projektname" maxlength="80" /><span
+            id="save2d-state"
+            >Lokal auf deinem Gerät</span
+          >
+        </div>
+        <button id="undo2d" class="button" aria-label="2D Rückgängig">↶</button
+        ><button id="redo2d" class="button" aria-label="2D Wiederholen">↷</button
+        ><button id="demo2d" class="button">Demo laden</button
+        ><button id="open2d" class="button">2D öffnen</button
+        ><button id="save2d" class="button">2D speichern</button
+        ><button id="export2d" class="button primary">OBS-Player exportieren</button>
+      </div>
+      <aside class="layers2d-panel">
+        <div class="panel-label">PNG-EBENEN <span id="layer2d-count"></span></div>
+        <button id="import2d" class="button full mint-outline">PNG-Ebenen importieren</button>
+        <p class="property-hint">
+          Transparente PNGs, z. B. Gesicht, Haare, Augen, Mund und Körper. Bis {{PNG_SIZE}} pro
+          Bild.
+        </p>
+        <div id="layers2d"></div>
+        <div class="tip">
+          <p>
+            Eigener 2D-Player für OBS. Kein Live2D-/MOC3-Export. PSD-Ebenen vorher einzeln als PNG
+            speichern.
+          </p>
+        </div>
+      </aside>
+      <section class="stage2d">
+        <div class="stage2d-toolbar">
+          <span class="eyebrow">2D VTUBER · MESH RIGGING</span
+          ><label><input type="checkbox" id="mesh2d" /> Netz bearbeiten</label
+          ><button id="preview2d" class="button">Vorschau starten</button>
+        </div>
+        <div class="canvas2d-wrap">
+          <canvas id="avatar2d-canvas" aria-label="2D-Avatar und Verformungsnetz"></canvas>
+        </div>
+        <div class="form2d-toolbar">
+          <label
+            >Form bearbeiten
+            <select id="form2d" class="text-input">
+              <option value="base">Grundform</option>
+            </select></label
+          ><button id="form2d-negative" class="button">Minimum</button
+          ><button id="form2d-positive" class="button">Maximum +1</button
+          ><button id="form2d-neutral" class="button">Neutral</button
+          ><button id="reset2d-form" class="button">Parameterform löschen</button>
+        </div>
+        <div class="parameters2d" id="parameters2d"></div>
+      </section>
+      <aside class="inspector2d-panel">
+        <div class="panel-label">EBENE &amp; RIG</div>
+        <div id="inspector2d"></div>
+      </aside>
+    </main>
+    <input type="file" id="png2d-input" accept="image/png,.png" multiple hidden /><input
+      type="file"
+      id="project2d-input"
+      accept=".vtuber2d.json,.json"
+      hidden
+    />
     <footer class="statusbar">
       <div><span class="live-dot"></span><span id="status-text">Bereit</span></div>
       <span id="status-right">WebGL 2 · Lokal auf deinem Gerät</span
       ><span class="footer-brand">DEWALD RIG STUDIO</span>
     </footer>
     <div class="toast-container" id="toasts" aria-live="polite"></div>
-    <input id="file-input" type="file" accept=".glb,.obj,.json" hidden />
+    <input id="file-input" type="file" accept=".glb,.vrm,.obj,.json" hidden />
     <dialog id="help-dialog">
       <div class="dialog-header">
         <span class="eyebrow">DEIN EIGENER RIGGING-EDITOR</span

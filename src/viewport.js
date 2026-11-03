@@ -222,6 +222,7 @@ export function createViewport(
     if (!renderer) return;
     const w = container.clientWidth,
       h = container.clientHeight;
+    if (!w || !h) return;
     renderer.setSize(w, h, false);
     perspective.aspect = w / h;
     perspective.updateProjectionMatrix();
@@ -337,7 +338,7 @@ export function createViewport(
   }
 
   function updateBoneVisuals() {
-    if (!rig) return;
+    if (!rig || !container.clientWidth || !container.clientHeight) return;
     bonesGroup.visible = showBones;
     for (const m of jointVisuals) {
       rig.boneMap.get(m.userData.boneId).getWorldPosition(m.position);
@@ -411,7 +412,7 @@ export function createViewport(
 
   function tick(time) {
     requestAnimationFrame(tick);
-    if (!rig) return;
+    if (!rig || !container.clientWidth || !container.clientHeight) return;
     onFrame(time);
     orbit.update();
     updateBoneVisuals();
