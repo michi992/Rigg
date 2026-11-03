@@ -1,8 +1,8 @@
 import * as THREE from 'three';
+import { FPS, LAST_FRAME, LIMITS } from './config.js';
+export { FPS, LAST_FRAME } from './config.js';
 
-export const FPS = 24;
-export const LAST_FRAME = 120;
-export const MAX_VERTICES = 300000;
+export const MAX_VERTICES = LIMITS.vertices;
 export const radians = (x) => (x * Math.PI) / 180;
 export const degrees = (x) => (x * 180) / Math.PI;
 export const clone = (x) => structuredClone(x);
@@ -94,7 +94,11 @@ export function normalizeParts(object) {
       throw new Error('Instanzierte Meshes bitte vor dem Export in einzelne Meshes umwandeln.');
     vertices += mesh.geometry.attributes.position.count;
     if (vertices > MAX_VERTICES)
-      throw new Error('Das Modell hat zu viele Vertices. Bitte auf höchstens 300.000 reduzieren.');
+      throw new Error(
+        'Das Modell hat zu viele Vertices. Bitte auf höchstens ' +
+          LIMITS.vertices.toLocaleString('de-DE') +
+          ' reduzieren.',
+      );
     const geometry = mesh.geometry.clone();
     // Das bisherige Rig zuerst ins Mesh einrechnen. Danach kann ein neues
     // Skelett gebunden werden, ohne beide Verformungen zu überlagern.
@@ -141,21 +145,29 @@ export function normalizeParts(object) {
 }
 
 export function validateJoints(joints) {
-  if (!Array.isArray(joints) || joints.length < 1 || joints.length > 100)
-    throw new Error('Ein Projekt benötigt 1 bis 100 Knochen.');
+  if (!Array.isArray(joints) || joints.length < 1 || joints.length > LIMITS.joints)
+    throw new Error('Ein Projekt benötigt 1 bis ' + LIMITS.joints + ' Knochen.');
+  if (joints.some((joint) => !joint || typeof joint !== 'object'))
+    throw new Error('Ungültiger Knochen.');
   const ids = new Set(joints.map((j) => j.id));
   if (
     ids.size !== joints.length ||
-    joints.some((j) => typeof j.id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(j.id))
+    joints.some(
+      (j) =>
+        typeof j.id !== 'string' ||
+        !/^[a-zA-Z0-9_-]+$/.test(j.id) ||
+        j.id.length > LIMITS.boneId ||
+        ['__proto__', 'constructor', 'prototype'].includes(j.id),
+    )
   )
     throw new Error('Ungültige Knochen-IDs.');
   for (const j of joints) {
     if (
       typeof j.name !== 'string' ||
-      j.name.length > 80 ||
+      j.name.length > LIMITS.boneName ||
       !Array.isArray(j.position) ||
       j.position.length !== 3 ||
-      j.position.some((x) => !Number.isFinite(x) || Math.abs(x) > 100)
+      j.position.some((x) => !Number.isFinite(x) || Math.abs(x) > LIMITS.coordinate)
     )
       throw new Error('Ungültiger Knochen.');
     if (j.parent !== null && !ids.has(j.parent)) throw new Error('Ein Elternknochen fehlt.');

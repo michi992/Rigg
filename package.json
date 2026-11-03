@@ -2,19 +2,21 @@
   "name": "dewald-rig-studio",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
     "check": "node scripts/check-syntax.mjs",
     "test": "node --test",
-    "format": "prettier --write src tests scripts build.mjs README.md package.json .prettierrc.json",
-    "format:check": "prettier --check src tests scripts build.mjs README.md package.json .prettierrc.json"
+    "format": "prettier --write src tests scripts .github build.mjs README.md package.json .prettierrc.json",
+    "format:check": "prettier --check src tests scripts .github build.mjs README.md package.json .prettierrc.json"
   },
   "dependencies": {
     "three": "0.180.0"
   },
   "devDependencies": {
     "esbuild": "0.25.10",
+    "jsdom": "26.1.0",
     "prettier": "3.6.2"
   }
 }

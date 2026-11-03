@@ -1,3 +1,4 @@
+import { LIMITS } from './config.js';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -34,20 +35,21 @@ export function validateProject(project) {
     !project.source ||
     !['demo', 'obj', 'glb'].includes(project.source.kind) ||
     typeof project.source.name !== 'string' ||
-    project.source.name.length > 250
+    project.source.name.length > LIMITS.sourceName
   )
     throw new Error('Ungültige Modellquelle.');
   if (
     project.source.kind !== 'demo' &&
-    (typeof project.source.data !== 'string' || project.source.data.length > 50000000)
+    (typeof project.source.data !== 'string' ||
+      project.source.data.length > LIMITS.sourceCharacters)
   )
     throw new Error('Die Modelldaten fehlen oder sind zu groß.');
   if (
     typeof project.name !== 'string' ||
-    project.name.length > 60 ||
+    project.name.length > LIMITS.projectName ||
     !Number.isFinite(project.falloff) ||
-    project.falloff < 1 ||
-    project.falloff > 6
+    project.falloff < LIMITS.falloffMin ||
+    project.falloff > LIMITS.falloffMax
   )
     throw new Error('Ungültige Projekteinstellungen.');
   const checkPose = (pose) => {
@@ -57,13 +59,13 @@ export function validateProject(project) {
       if (
         !Array.isArray(a) ||
         a.length !== 3 ||
-        a.some((x) => !Number.isFinite(x) || Math.abs(x) > 100)
+        a.some((x) => !Number.isFinite(x) || Math.abs(x) > LIMITS.poseAngle)
       )
         throw new Error('Die Pose enthält ungültige Rotationen.');
     });
   };
   checkPose(project.pose);
-  if (!Array.isArray(project.keys) || project.keys.length > 121)
+  if (!Array.isArray(project.keys) || project.keys.length > LAST_FRAME + 1)
     throw new Error('Zu viele Keyframes.');
   const frames = new Set();
   project.keys.forEach((k) => {

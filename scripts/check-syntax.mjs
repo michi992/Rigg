@@ -3,13 +3,14 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const files = ['build.mjs'];
-for (const directory of ['src', 'tests', 'scripts']) {
-  for (const entry of readdirSync(directory)) {
-    if (/\.(js|mjs)$/.test(entry)) {
-      files.push(join(directory, entry));
-    }
+function collect(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) collect(path);
+    else if (/\.(js|mjs)$/.test(entry.name)) files.push(path);
   }
 }
+for (const directory of ['src', 'tests', 'scripts']) collect(directory);
 
 for (const file of files) {
   const result = spawnSync(process.execPath, ['--check', file], { stdio: 'inherit' });
